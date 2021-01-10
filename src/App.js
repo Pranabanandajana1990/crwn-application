@@ -2,7 +2,7 @@ import React from "react";
 
 import { Switch, Route } from "react-router-dom";
 
-import "./App.css";
+import "./App.scss";
 
 import Homepage from "./pages/homepage/homepage.component";
 
@@ -12,7 +12,7 @@ import Header from "./components/header/header.component";
 
 import SignInAndSignUpPage from "./pages/sign-in-and-sign-up/sign-in-and-sign-up.component";
 
-import { auth } from "./firebase/firebase.utils";
+import { auth, createUserProfileDocument } from "./firebase/firebase.utils";
 
 class App extends React.Component {
   constructor() {
@@ -26,10 +26,23 @@ class App extends React.Component {
   unsubscribeFromAuth = null;
 
   componentDidMount() {
-    this.unsubscribeFromAuth = auth.onAuthStateChanged((user) => {
-      this.setState({ currentUser: user });
+    this.unsubscribeFromAuth = auth.onAuthStateChanged(async (userAuth) => {
+      createUserProfileDocument(userAuth);
 
-      console.log(user);
+      if (userAuth) {
+        const userRef = await createUserProfileDocument(userAuth);
+
+        userRef.onSnapshot((snapShot) => {
+          this.setState({
+            currentUser: {
+              id: snapShot.id,
+              ...snapShot.data(),
+            },
+          });
+          console.log(this.state);
+        });
+      }
+      this.setState({ currentUser: userAuth });
     });
   }
 
